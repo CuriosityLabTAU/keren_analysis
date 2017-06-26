@@ -53,7 +53,7 @@ def analyze_faculty(df_clean, relevant_keys, stat_keys, faculty_columns=None):
             print('--------- ', the_key, '----------')
 
             # ==== one-side anova
-            fac_data = []
+            fac_data = []       # a list of numpy array of all the data from the faculty (per key)
             for fac1 in faculty_list:
                 fac_data.append(df_clean[df_clean[faculty_column] == fac1][the_key].dropna().values)
             if len(fac_data) == 2:
@@ -141,18 +141,27 @@ def analyze_multi_regression(df_clean, relevant_keys):
 def analyze_multi_regression_cat(df_clean, relevant_keys):
     free_exp_stats = [relevant_keys[k] for k in [1, 6, 10, 11]]
     label_stat = [relevant_keys[k] for k in [7, 8, 9]]
+
+    # get only the relevant columns for this specific analysis
+    # doing this because of .dropna, want to eliminate only rows with but RELEVANT inforamtion
     regression_stats = [relevant_keys[k] for k in [1, 6, 10, 11, 7, 8, 9]]
     print('regression_stats', regression_stats)
-    df_reg = df_clean[regression_stats].dropna()
+    df_reg = df_clean[regression_stats].dropna()    # new "clean" dataframe .dropna
 
+    # the name of the columns include spaces ' ', '+'
+    # this is BAD, so replace spaces ' ' with underscore '_'
     new_columns = []
     for c in df_reg.columns:
         new_columns.append(c.replace(' ', '_').replace('+', '_'))
     df_reg.columns = new_columns
     print(df_reg.columns)
 
+    # print the dataframe and only a sample of the data for each column
     print('head', df_reg.head())
-    est = smf.ols(formula="curiosity_ques_stretching ~ total_listenning_time + C(experiment)", data=df_reg).fit()
+    # !!! multi-linear regression
+    # formula (what_you_want_to_predict ~ parameters_that_can_explain_them
+    # if the parameter is CATEGORICAL (e.g experiment), just put it in C()
+    est = smf.ols(formula="curiosity_ques_stretching ~ transition_entropy + Multi_discipline_entropy + C(experiment)", data=df_reg).fit()
     print(est.summary())
     # lr.fit(x, y)
     # print(lr.coef_)
@@ -200,22 +209,26 @@ def analyze_regression(df_clean, relevant_keys, stat_keys):
 
 
 def analyze_factor_analysis(df, relevant_keys, stat_keys):
-    fa_keys = range(8,18)
-    fa_keys.append(31)
-    fa_keys.append(42)
-    fa_keys.append(66)
+    # take all the things you want to put in factors
+    fa_keys = range(8,18)   # curiosity question
+    # fa_keys.append(31)
+    # fa_keys.append(42)
+    # fa_keys.append(66)
     print('fa_keys', df.keys()[fa_keys])
     df_fa = df[fa_keys].dropna()
 
+    # go over several number of possible factors
+    # we don't know a-priori how many factors there should be
     n_components = range(1, len(fa_keys))
     fa_scores = []
     for n in n_components:
-        fa = factor_analysis.FactorAnalysis()
-        fa.n_components = n
-        fa.fit(df_fa.values)
+        fa = factor_analysis.FactorAnalysis()   # only define the object, not running yet
+        fa.n_components = n                     # how many factors
+        fa.fit(df_fa.values)                    # only here runs the fit
         fa_scores.append(fa.score(df_fa.values))
         if n == 2:
-            print(fa.components_)
+            print(fa.components_)   # the components, should show us how to collect into factors
+            # TODO keren: check with Michal's explanation on how to do that
     print(n_components, fa_scores)
     plt.plot(n_components, fa_scores)
     plt.xlabel('number of components')
@@ -284,7 +297,9 @@ def analyze_faculty_preferences(df):
 def normality_testing(df_clean, relevant_keys, stat_keys):
     for s in stat_keys:
         x = df_clean[relevant_keys[s]].dropna().values
+        # this is the shapiro normality test
         w, p = stats.shapiro(x)
+        # TODO keren: check what does it mean to pass the normality test!
         print(x.shape, relevant_keys[s], w, p, p<w)
         plt.hist(x, 50, facecolor='green', alpha=0.75)
         plt.title(relevant_keys[s])
@@ -340,7 +355,7 @@ def bucketing(df_clean, relevant_keys, stat_keys):
 
 
 def characterizing(df_clean, relevant_keys, stat_keys, num_clusters=5):
-    curiosity_stats = ['t0', 'curiosity_ques_embr+strt TOTAL', 'Multi discipline entropy', 'BFI'] #, 'engagement mean', 'valence mean', 'surprise mean']
+    curiosity_stats = ['normalized total listenning time', 'curiosity_ques_embr+strt TOTAL', 'Multi discipline entropy', 'BFI'] #, 'engagement mean', 'valence mean', 'surprise mean']
     x = df_clean[curiosity_stats].dropna().values
     kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(x)
     print(kmeans.cluster_centers_)

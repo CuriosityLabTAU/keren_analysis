@@ -12,38 +12,53 @@ faculty_name_eng = ['Arts', 'Social', 'Life', 'Medicine', 'Engineering', 'Humani
 def get_fac(fac):
     return faculty_name[int(fac) - 1]
 
+
+# load the data.
+# from .csv to pandas data-frame
 def load_data():
     filename = data_path + 'ALL_DATA_10_normalized.csv'
 
     df = pd.read_csv(filename)
     return df
 
+
+# get only relevant information
 def get_relevant_data(df):
 
     keys = df.keys()
     print('=== keys ===')
-
     for ik, kk in enumerate(keys):
         print(ik, kk)
+
     relevant_keys = keys[[0,2,3,4,5,6,7,28,29,30,31,42, 51, 54, 56, 58, 60, 62, 64, 66]]
     print('=== relevant keys ===')
     for ik, kk in enumerate(relevant_keys):
         print(ik, kk)
-    df_relevant = df[relevant_keys]
+    df_relevant = df[relevant_keys]     # create a new dataframe, with only the relevant columns
+
+    # create list of stat_keys
     stat_keys = [5, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
     # stat_keys = [13, 14, 15, 16, 17, 18, 19]
     print('=== stat keys ===')
-
     print(relevant_keys[stat_keys])
-    df_clean = df_relevant.copy() #df_relevant.dropna(subset=[relevant_keys[4]])
-    # df_clean = df_clean[df_clean['experiment'] == 3]
+
+    # options to clean data
+    df_clean = df_relevant.copy()
+    # df_relevant.dropna(subset=[relevant_keys[4]])         # option 1: remove rows with no data
+    # df_clean = df_clean[df_clean['experiment'] == 3]      # option 2: take only a single experiment
     return df_clean, relevant_keys, stat_keys
 
 def get_faculty(df_clean, relevant_keys):
+    # 3 = faculty
+    # .values --> convert from dataframe to numpy array
     faculty_list = np.unique(df_clean[relevant_keys[3]].dropna().values)
-    faculty_list = np.delete(faculty_list, 7)   # remove management
+
+    # -- remove some faculties, if you want --
+    # faculty_list = np.delete(faculty_list, 7)   # remove management
+
     n_faculty = faculty_list.shape[0]
 
+    # how many rows per faculty
     n_per_faculty = {}
     for fac1 in faculty_list:
         n_per_faculty[get_fac(fac1)] = df_clean[df_clean[relevant_keys[3]] == fac1].shape[0]
@@ -78,7 +93,7 @@ def get_campus(df_clean, faculty_list):
         'transition':
             {
                 'group1': [1, 0, 3],
-                'group2': [7,2,4,6],
+                'group2': [7, 2, 4,6],
                 'group3': [5]
             }
     }
@@ -96,15 +111,22 @@ def add_faculty_group(df_clean, faculty_list, faculty_group, group_name):
             df_clean.loc[df_clean['faculty'] == faculty_list[j], 'faculty_group_' + group_name] = i
     return df_clean
 
+
 def get_results(df_clean, relevant_keys, stat_keys, faculty_list, n_faculty):
     results = {'faculty': {
         'mean': {},
         'z_stat': np.zeros(n_faculty),
         'p_val': np.zeros(n_faculty)
     }}
+    # go over each faculty
     for fac1 in faculty_list:
         results['faculty']['mean'][get_fac(fac1)] = {}
+        # go over all stats that we're intereseted in
         for the_things in stat_keys:
             the_key = relevant_keys[the_things]
             fac1_data = df_clean[df_clean[relevant_keys[3]] == fac1][the_key]
             results['faculty']['mean'][get_fac(fac1)][the_key] = fac1_data.mean()
+            # TODO Keren: put here all the calculation, and do the plotting elsewhere
+            # work in progress
+
+    return results
