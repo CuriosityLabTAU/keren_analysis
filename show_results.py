@@ -28,20 +28,35 @@ def show_faculty(df_clean, relevant_keys, stat_keys, faculty_list):
         for if1, fac1 in enumerate(fa):
             fac1_data = df_clean[df_clean[relevant_keys[3]] == fac1][the_key].dropna().values
             for if2, fac2 in enumerate(fa):
-                fac2_data = df_clean[df_clean[relevant_keys[3]] == fac2][the_key].dropna()
-                n_fac2_data = fac2_data.shape[0]
-                z_stat, p_val = stats.ranksums(fac1_data, fac2_data)
-                if p_val < 0.05:
-                    significant.append([if1, if2, p_val])
+                if if2 > if1:
+                    fac2_data = df_clean[df_clean[relevant_keys[3]] == fac2][the_key].dropna()
+                    n_fac2_data = fac2_data.shape[0]
+                    z_stat, p_val = stats.ranksums(fac1_data, fac2_data)
+                    if p_val < 0.05:
+                        significant.append([if1, if2, p_val, np.mean(fac1_data), np.mean(fac2_data)])
         print(significant)
-        ax = sns.barplot(x=relevant_keys[3], y=the_key, data=df_clean, order=fa)
+        ax = sns.barplot(x=relevant_keys[3], y=the_key, data=df_clean, order=fa, capsize=.2, ci=68)
 
-        # Keren:
         props = {'connectionstyle': 'bar', 'arrowstyle': '-', \
                  'shrinkA': 20, 'shrinkB': 20, 'lw': 2}
-        ax.annotate('*', xy=(5.5,7), zorder=10)
-        ax.annotate('', xy=(5, 5), xytext=(6, 5), arrowprops=props)
+        max_height = 0
+        for sig in significant:
+            b1 = sig[0]
+            b2 = sig[1]
+            p = sig[2]
+            height = max(sig[3:])
+            # if p < 0.01:
+            #     ax.annotate('**', xy=((b1+b2)/2.0,height + 1), zorder=10)
+            # elif p < 0.05:
+            #     ax.annotate('*', xy=((b1+b2)/2.0, height+1), zorder=10)
+        #     ax.annotate('', xy=(b1, height + 1), xytext=(b2, height + 1), arrowprops=props, )
+        #     max_height = max([max_height, height])
+        # if max_height > 0:
+        #     plt.axis([min(a)-1, max(a)+1, 0, max_height*2.0])
 
         f_name = [faculty_name[x] for x in a]
         ax.set(xticklabels=f_name, title=the_key)
-        plt.show()
+
+        # plt.show()
+        plt.savefig('results/' + the_key + '_faculty.png')
+        plt.close()
