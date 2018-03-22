@@ -14,6 +14,8 @@ from stamp.plugins.multiGroups.postHoc.Scheffe import Scheffe
 from sklearn.cluster import KMeans
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from statsmodels.formula.api import ols
+
 
 # df_clean, relevant_keys, stat_keys = get_data()
 # faculty_list, n_faculty = get_faculty(df_clean, relevant_keys)
@@ -359,3 +361,562 @@ def characterizing(df_clean, relevant_keys, stat_keys, num_clusters=5):
     x = df_clean[curiosity_stats].dropna().values
     kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(x)
     print(kmeans.cluster_centers_)
+
+
+
+
+import pandas as pd
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
+from statsmodels.graphics.factorplots import interaction_plot
+import matplotlib.pyplot as plt
+from scipy import stats
+
+
+def eta_squared(aov):
+    aov['eta_sq'] = 'NaN'
+    aov['eta_sq'] = aov[:-1]['sum_sq'] / sum(aov['sum_sq'])
+    return aov
+
+
+def omega_squared(aov):
+    mse = aov['sum_sq'][-1] / aov['df'][-1]
+    aov['omega_sq'] = 'NaN'
+    aov['omega_sq'] = (aov[:-1]['sum_sq'] - (aov[:-1]['df'] * mse)) / (sum(aov['sum_sq']) + mse)
+    return aov
+
+
+
+from matplotlib.pyplot import *
+
+labels = ["Baseline", "System"]
+data =   [3.75               , 4.75]
+error =  [0.3497             , 0.3108]
+
+def condition_plot(a, b, x, a_str, b_str, x_str, df_, x_name):
+    font = {'family': 'normal',
+            'weight': 'bold',
+            'size': 76}
+    matplotlib.rc('font', **font)
+
+    x_stop_0 = x[b == 0].dropna()
+    x_stop_1 = x[b == 1].dropna()
+    x_priming_0 = x[a == 0].dropna()
+    x_priming_1 = x[a == 1].dropna()
+
+    print('Stop: No: %2.2f \\pm  %2.2f, N=%d, Yes: %2.2f \\pm %2.2f, N=%d' %
+          (np.mean(x_stop_0), np.std(x_stop_0), len(x_stop_0),
+           np.mean(x_stop_1), np.std(x_stop_1), len(x_stop_1)))
+    print('Priming: No: %2.2f \\pm  %2.2f, N=%d, Yes: %2.2f \\pm %2.2f, N=%d' %
+          (np.mean(x_priming_0), np.std(x_priming_0), len(x_priming_0),
+           np.mean(x_priming_1), np.std(x_priming_1), len(x_priming_1)))
+    print()
+
+    stop_stat, stop_p = stats.ttest_ind(x_stop_0, x_stop_1)
+    priming_stat, priming_p = stats.ttest_ind(x_priming_0, x_priming_1)
+
+    if x_name == 'T':
+        ab_lbl = ['NO-STOP', 'STOP']
+        x_data = []
+        x_data.append(x_stop_0)
+        x_data.append(x_stop_1)
+        n_x = 2
+        x_cond = np.array([1, 2])
+    else:
+        ab_lbl = ['NO-STOP/NO-PRIMING','NO-STOP/PRIMING', 'STOP/NO-PRIMING',  'STOP/PRIMING']
+        x_data = []
+        x_data.append(x[(a==0) & (b==0)])
+        x_data.append(x[(a==1) & (b==0)])
+        x_data.append(x[(a == 0) & (b == 1)])
+        x_data.append(x[(a == 1) & (b == 1)])
+        n_x = 4
+        x_cond = np.array([1, 2, 3, 4])
+
+    x_avg = np.zeros([n_x])
+    x_std = np.zeros([n_x])
+    for i_d, x_d in enumerate(x_data):
+        x_avg[i_d] = np.mean(x_d)
+        x_std[i_d] = np.std(x_d) / np.sqrt(len(x_d))
+
+    data = x_avg
+    xlocations = x_cond
+    error = x_std
+    labels = ab_lbl
+
+    # df_['ab'] = df_.apply(lambda row: row[a_str] + row[b_str] * 2, axis=1)
+    # df_na = df_[[x_str, 'ab']].dropna()
+    # mc = MultiComparison(df_na[x_str], df_na['ab'])
+    # result = mc.tukeyhsd()
+    # print(result.summary())
+    # print(mc.groupsunique)
+
+    xlocations = np.array(range(len(data))) + 0.5
+    width = 0.5
+    the_linewidth = 10
+    bar(xlocations, data, yerr=error, width=width, ecolor='black')
+
+
+    # if stop_p < 0.05:
+    #     plot([xlocations[0] + 0.25, xlocations[1] + 0.25], [max(data)+max(error) * 1.2, max(data)+max(error) * 1.2],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([xlocations[2] + 0.25, xlocations[3] + 0.25], [max(data) + max(error) * 1.2, max(data) + max(error) * 1.2],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([(xlocations[0] + 0.25 + xlocations[1] + 0.25) / 2.0,
+    #           (xlocations[0] + 0.25 + xlocations[1] + 0.25) / 2.0,],
+    #          [max(data) + max(error) * 1.2, max(data) + max(error) * 1.7],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([(xlocations[2] + 0.25 + xlocations[3] + 0.25) / 2.0,
+    #           (xlocations[2] + 0.25 + xlocations[3] + 0.25) / 2.0, ],
+    #          [max(data) + max(error) * 1.2, max(data) + max(error) * 1.7],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([(xlocations[0] + 0.25 + xlocations[1] + 0.25) / 2.0,
+    #           (xlocations[2] + 0.25 + xlocations[3] + 0.25) / 2.0, ],
+    #          [max(data) + max(error) * 1.7, max(data) + max(error) * 1.7],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     if stop_p < 0.001:
+    #         text(np.mean(xlocations) + 0.25, max(data) + max(error) * 2.0, '***')
+    #     elif stop_p < 0.01:
+    #         text(np.mean(xlocations) + 0.25, max(data) + max(error) * 2.0, '**')
+    #     elif stop_p < 0.05:
+    #         text(np.mean(xlocations) + 0.25, max(data) + max(error) * 2.0, '*')
+    #
+    # if priming_p < 0.05:
+    #     plot([xlocations[0] + 0.35, xlocations[2] + 0.15], [max(data) + max(error) * 1.2, max(data) + max(error) * 1.2],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([xlocations[1] + 0.35, xlocations[3] + 0.15], [max(data) + max(error) * 1.5, max(data) + max(error) * 1.5],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([(xlocations[0] + 0.25 + xlocations[2] + 0.25) / 2.0,
+    #           (xlocations[0] + 0.25 + xlocations[2] + 0.25) / 2.0, ],
+    #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.0],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([(xlocations[1] + 0.25 + xlocations[3] + 0.25) / 2.0,
+    #           (xlocations[1] + 0.25 + xlocations[3] + 0.25) / 2.0, ],
+    #          [max(data) + max(error) * 1.5, max(data) + max(error) * 2.0],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     plot([(xlocations[0] + 0.25 + xlocations[2] + 0.25) / 2.0,
+    #           (xlocations[1] + 0.25 + xlocations[3] + 0.25) / 2.0, ],
+    #          [max(data) + max(error) * 2.0, max(data) + max(error) * 2.0],
+    #          '-', color='black', linewidth=the_linewidth)
+    #     if priming_p < 0.001:
+    #         text(np.mean(xlocations) + 0.25, max(data) + max(error) * 2.3, '***')
+    #     elif priming_p < 0.01:
+    #         text(np.mean(xlocations) + 0.25, max(data) + max(error) * 2.3, '**')
+    #     elif priming_p < 0.05:
+    #         text(np.mean(xlocations) + 0.25, max(data) + max(error) * 2.3, '*')
+
+    # yticks(range(0, 8))
+    # xticks(xlocations + width / 2, labels)
+    plt.xticks([], [])
+
+    xlim(0, xlocations[-1] + width * 2)
+    title_str = '%s, p_stop=%2.6f, p_priming=%2.6f' % (x_str, stop_p, priming_p)
+    # title(title_str)
+    # gca().get_xaxis().tick_bottom()
+    # gca().get_yaxis().tick_left()
+    # axis([xlocations[0], xlocations[-1] + 0.5, 0, max(data) + max(error) * 4.0])
+    # y_label = '$%s$' % x_name
+    # ylabel(y_label, usetex=True, fontsize=48)
+    plt.tick_params(axis='both', which='major', labelsize=48)
+    show()
+
+    # print(x_avg, x_std)
+    # plt.bar(x_cond, x_avg)
+    # plt.errorbar(x_cond, x_avg, yerr=x_std, fmt='.', ecolor='black')
+    # plt.xticks(x_cond, ab_lbl)
+    # plt.title(x_str)
+    # plt.axis([0,5, 0, 1.0])
+    # plt.show()
+
+
+
+
+
+def analyze_conditions(df_clean, stat_keys, stat_names):
+    a_str = 'condition_framing'
+    b_str = 'condition_stop'
+    c_str = 'gender'
+
+    for i_stat, x_str in enumerate(stat_keys):
+        x_name = stat_names[i_stat]
+        print('=============', x_str, '==================')
+
+        x = df_clean[x_str].dropna()
+        print('%s: %2.2f \\pm %2.2f, N=%d' % (x_str, np.mean(x), np.std(x), len(x)))
+        t_stat, p_value = stats.ttest_1samp(x, 0)
+        print('T-score: %2.3f, p_value: %2.3f' % (t_stat, p_value))
+
+        data = df_clean[[a_str, b_str, x_str]].dropna()
+        a = data[a_str]
+        b = data[b_str]
+        x = data[x_str]
+
+        formula = '%s ~ C(%s) * C(%s)' % (x_str, a_str, b_str)
+        est = smf.ols(formula=formula, data=data).fit()
+        print(est.summary())
+        print('F(%d, %d) = %2.2f, p=%2.3f' % (est.df_model, est.df_resid, est.fvalue, est.f_pvalue))
+
+        print('====== anova ======')
+        moore_lm = ols(formula=formula, data=data).fit()
+        table = sm.stats.anova_lm(moore_lm, typ=2)  # Type 2 ANOVA DataFrame
+        print(table)
+        print('====== end ======')
+
+        # # formula = '%s ~ C(%s) * C(%s) * C(%s)' % (x_str, a_str, b_str, c_str)
+        # model = ols(formula, data).fit()
+        # aov_table = anova_lm(model, typ=2)
+        # eta_squared(aov_table)
+        # omega_squared(aov_table)
+        # print(aov_table)
+        # fig = interaction_plot(a, b, x, colors=['red', 'blue'], markers=['D', '^'], ms=10)
+        # plt.title(x_str)
+        # plt.show()
+
+        formula = '%s ~ C(%s)' % (x_str, a_str)
+        est = smf.ols(formula=formula, data=data).fit()
+        print(est.summary())
+
+        # # formula = '%s ~ C(%s) * C(%s) * C(%s)' % (x_str, a_str, b_str, c_str)
+        # model = ols(formula, data).fit()
+        # aov_table = anova_lm(model, typ=2)
+        # eta_squared(aov_table)
+        # omega_squared(aov_table)
+        # print(aov_table)
+
+        formula = '%s ~ C(%s)' % (x_str, b_str)
+        est = smf.ols(formula=formula, data=data).fit()
+        print(est.summary())
+
+
+        # model = ols(formula, data).fit()
+        # aov_table = anova_lm(model, typ=2)
+        # eta_squared(aov_table)
+        # omega_squared(aov_table)
+        # print(aov_table)
+
+
+        # the_data = x
+        # the_group = a + 2 * b
+        # f_value, p_value = stats.f_oneway(the_data, the_group)
+        # print(f_value, p_value)
+        # mc = MultiComparison(the_data, the_group)
+        # result = mc.tukeyhsd()
+        # print(result.summary())
+        # print(mc.groupsunique)
+        # result.plot_simultaneous()
+        # plt.show()
+
+        condition_plot(a, b, x, a_str, b_str, x_str, data, x_name)
+
+
+        # except:
+        #     plt.show()
+    # get 2x2 conditions
+    # https://www.marsja.se/three-ways-to-carry-out-2-way-anova-with-python/
+
+
+
+
+def analyze_correlations(df_clean, stat_keys):
+    y_str = 'curiosity_ques_embr_strt_TOTAL'
+    for x_str in stat_keys:
+        data = df_clean[[x_str, y_str, 'condition_framing', 'condition_stop']].dropna()
+
+        # x = data[data[x_str] > 0][x_str]
+        # y = data[data[x_str] > 0][y_str]
+
+        x = data[x_str]
+        y = data[y_str]
+
+        est = smf.ols(formula="%s ~ %s + C(condition_framing) + C(condition_stop)" % (y_str, x_str), #
+                      data=data).fit()
+        try:
+
+            print(est.summary())
+            slope, intercept, r_value, p_value, std_err = stats.linregress(x.values, y.values)
+            sns.regplot(x=x, y=y)
+            plt.title('r=%2.3f, p=%2.3f' % (r_value, p_value))
+            plt.xlabel(x_str)
+            plt.show()
+        except:
+            pass
+
+
+def go_wild(df_clean):
+    # est = smf.ols(formula="BI ~ normalized_total_listenning_time * Multi_discipline_entropy * transition_entropy", +
+    df_current = df_clean#[df_clean['condition_stop'] == 1]
+
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~ wavs_amount * Multi_discipline_entropy + C(condition_framing)", # + wavs_amount + Multi_discipline_entropy",
+                  data=df_current).fit()
+    print(est.summary())
+
+
+def clusters(df_clean):
+    num_clusters = 3
+    curiosity_stats = ['correct_learning_questions_percent', 'Multi_discipline_entropy', 'transition_entropy'] #, 'transition_entropy'] #, 'adj_suprise_cnt'] #'normalized_total_listenning_time',
+    # curiosity_stats = ['adj_joy_cnt', 'adj_suprise_cnt']
+    x = df_clean[curiosity_stats].dropna()
+    kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(x[curiosity_stats].values)
+    print('=======================================================')
+    print(curiosity_stats)
+    print(kmeans.cluster_centers_)
+
+    the_measures = ['curiosity_ques_embr_strt_TOTAL', 'SAT', 'BFI', 'grades']
+
+    for the_measure in the_measures:
+        print()
+        print('-----', the_measure, '------')
+        y = df_clean[[the_measure] + curiosity_stats].dropna()
+
+        # for c in curiosity_stats:
+        #     est = smf.ols(
+        #         formula="SAT ~ correct_learning_questions_percent + condition_framing + condition_stop + transition_entropy + Multi_discipline_entropy",
+        #         data=df_clean).fit()
+        # print(c, est.summary())
+        # print()
+
+        y_label = kmeans.predict(y[curiosity_stats].values)
+        df_clean['labels'] = -1
+        df_clean.loc[y.index.values, 'labels'] = y_label
+
+        df_labeled = df_clean[df_clean['labels'] >= 0]
+
+        formula = '%s ~ C(labels)' % the_measure
+
+        # model = ols(formula, df_labeled).fit()
+        # aov_table = anova_lm(model, typ=2)
+        # eta_squared(aov_table)
+        # omega_squared(aov_table)
+        # print(aov_table)
+
+        print('====== anova ======')
+        moore_lm = ols(formula=formula, data=df_labeled).fit()
+        table = sm.stats.anova_lm(moore_lm, typ=2)  # Type 2 ANOVA DataFrame
+        print(table)
+        print('====== end ======')
+
+        draw_data_avg = np.zeros([3])
+        draw_data_std = np.zeros([3])
+        map_cluster_to_group = [0, 1, 2]
+        for n in range(num_clusters):
+            the_group = df_labeled[df_labeled['labels'] == n][the_measure].values
+            print('group %d: %2.2f \\pm %2.2f, N=%d' % (n, np.mean(the_group), np.std(the_group), len(the_group)))
+            draw_data_avg[map_cluster_to_group[n]] = np.mean(the_group)
+            draw_data_std[map_cluster_to_group[n]] = np.std(the_group) / np.sqrt(len(the_group))
+
+        for n in range(num_clusters):
+            the_group = df_labeled[df_labeled['labels'] == n][the_measure].values
+            for m in range(num_clusters):
+                if m > n:
+                    the_other_group = df_labeled[df_labeled['labels'] == m][the_measure].values
+                    t_stat, p_value = stats.ttest_ind(the_group, the_other_group)
+                    print(n, m, t_stat, p_value)
+
+        if num_clusters > 2:
+            mc = MultiComparison(df_labeled[the_measure], df_labeled['labels'])
+            result = mc.tukeyhsd()
+            print(result.summary())
+            print(mc.groupsunique)
+            result.plot_simultaneous()
+            plt.xlabel(the_measure)
+            plt.ylabel('groups')
+            plt.title('N = %d' % len(df_labeled))
+            plt.show()
+
+            font = {'family': 'normal',
+                    'weight': 'bold',
+                    'size': 76}
+            matplotlib.rc('font', **font)
+
+            xlocations = np.array(range(len(draw_data_avg))) + 0.5
+            data = draw_data_avg
+            error = draw_data_std
+            width = 0.5
+            the_linewidth = 10
+            labels = ['Cluster 1', 'Cluster 2', 'Cluster 3']
+            bar(xlocations, data, yerr=error, width=width, ecolor='black')
+            # if the_measure == 'SAT':
+            #     plot([xlocations[0] + 0.25, xlocations[0] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.0],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     plot([xlocations[1] + 0.25, xlocations[1] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.0],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     plot([xlocations[0] + 0.25, xlocations[1] + 0.25],
+            #          [max(data) + max(error) * 2.0, max(data) + max(error) * 2.0],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     text(np.mean(xlocations[[0,1]]) + 0.25, max(data) + max(error) * 2.3, '***')
+            #
+            #     plot([xlocations[0] + 0.25, xlocations[0] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.5],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     plot([xlocations[2] + 0.25, xlocations[2] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.5],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     plot([xlocations[0] + 0.25, xlocations[2] + 0.25],
+            #          [max(data) + max(error) * 2.5, max(data) + max(error) * 2.5],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     text(np.mean(xlocations[[0, 2]]) + 0.25, max(data) + max(error) * 2.7, '***')
+            #     ylabel('SAT', usetex=True, fontsize=48)
+            # else:
+            #     plot([xlocations[0] + 0.25, xlocations[0] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.0],
+            #          '-', color='black', linewidth=10)
+            #     plot([xlocations[1] + 0.25, xlocations[1] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.0],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     plot([xlocations[0] + 0.25, xlocations[1] + 0.25],
+            #          [max(data) + max(error) * 2.0, max(data) + max(error) * 2.0],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     text(np.mean(xlocations[[0, 1]]) + 0.25, max(data) + max(error) * 2.3, '***')
+            #
+            #     plot([xlocations[1] + 0.25, xlocations[1] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.5],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     plot([xlocations[2] + 0.25, xlocations[2] + 0.25],
+            #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.5],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     plot([xlocations[1] + 0.25, xlocations[2] + 0.25],
+            #          [max(data) + max(error) * 2.5, max(data) + max(error) * 2.5],
+            #          '-', color='black', linewidth=the_linewidth)
+            #     text(np.mean(xlocations[[1, 2]]) + 0.25, max(data) + max(error) * 2.7, '***')
+            #     ylabel('$\overline{CEI}$', usetex=True, fontsize=48)
+
+            # xticks(xlocations + width / 2, labels)
+            xticks([], [])
+            plt.tick_params(axis='both', which='major', labelsize=48)
+            xlim(0, xlocations[-1] + width * 2)
+
+            axis([np.min(xlocations[0]), np.max(xlocations)+0.5, 0, max(data) + max(error) * 10.0])
+            show()
+
+
+
+    y = df_clean[['curiosity_ques_embr_strt_TOTAL','SAT'] + curiosity_stats].dropna()
+    y_label = kmeans.predict(y[curiosity_stats].values)
+    df_clean['labels'] = -1
+    df_clean.loc[y.index.values, 'labels'] = y_label
+    df_labeled = df_clean[df_clean['labels'] >= 0]
+
+    group_markers = [u'+', u'x', u'o']
+    markers = [group_markers[i] for i in df_labeled['labels'].values]
+    x1 = df_labeled['curiosity_ques_embr_strt_TOTAL'].values
+    x2 = df_labeled['SAT'].values
+
+    for _s, _x, _y in zip(markers, x1, x2):
+        plt.scatter(_x, _y, marker=_s)
+    plt.show()
+
+
+def basic_stats(df_clean):
+    print('Participants: %d' % len(df_clean))
+
+    age = df_clean['age'].dropna().values
+    print('Age: %d, average %2.3f, std %2.3f' % (len(age), np.mean(age), np.std(age)))
+
+    gender = df_clean['gender'].dropna().values
+    print('Gender: %d , males %d, females %d' % (len(gender), np.sum(gender == 1), np.sum(gender == 2)))
+
+
+def assessment(df_clean):
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'BFI']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  BFI", data=data).fit()
+    print(est.summary())
+
+    data = df_clean[df_clean['SAT'] > 0][['curiosity_ques_embr_strt_TOTAL', 'SAT']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  SAT", data=data).fit()
+    print(est.summary())
+
+    data = df_clean[df_clean['grades'] > 0][['curiosity_ques_embr_strt_TOTAL', 'grades']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  grades", data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'correct_learning_questions_percent', 'condition_framing', 'condition_stop']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + condition_framing + condition_stop", data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['SAT', 'correct_learning_questions_percent', 'condition_framing', 'condition_stop']].dropna()
+    est = smf.ols(formula="SAT ~  correct_learning_questions_percent + condition_framing + condition_stop", data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'correct_learning_questions_percent', 'Multi_discipline_entropy', 'transition_entropy', 'condition_stop', 'condition_framing']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + transition_entropy + Multi_discipline_entropy + condition_framing + condition_stop", data=data).fit()
+    print(est.summary())
+
+
+    data = df_clean[['SAT', 'correct_learning_questions_percent', 'Multi_discipline_entropy',
+                     'transition_entropy', 'condition_stop', 'condition_framing']].dropna()
+    est = smf.ols(
+        formula="SAT ~  correct_learning_questions_percent + Multi_discipline_entropy + transition_entropy + condition_framing + condition_stop",
+        data=data).fit()
+    print(est.summary())
+
+
+    data = df_clean[['Multi_discipline_entropy',
+                     'transition_entropy']].dropna()
+    est = smf.ols(
+        formula="transition_entropy ~  Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['SAT', 'wavs_amount', 'Multi_discipline_entropy', 'correct_learning_questions_percent']].dropna()
+    data = data[data['SAT'] > 500]
+    est = smf.ols(
+        formula="SAT ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'wavs_amount', 'Multi_discipline_entropy', 'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+
+    data = df_clean[['BFI', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="BFI ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['grades', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+
+
+    est = smf.ols(
+        formula="grades ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+
+def affectiva_groups(df_clean):
+    # parameter = 'Multi_discipline_entropy'
+    # variable = 'is_joy'
+    #
+    # df_current = df_clean[df_clean['over_50'] == 1]
+    #
+    # df_current = df_current[[parameter, variable]].dropna()
+    #
+    # the_group = df_current[df_clean[variable] == 0][parameter].values
+    # the_other_group = df_current[df_clean[variable] == 1][parameter].values
+    # n = len(the_group)
+    # m = len(the_other_group)
+    #
+    # t_stat, p_value = stats.ttest_ind(the_group, the_other_group)
+    # print(n, m, t_stat, p_value)
+
+
+    df_corr = df_clean #[df_clean['over_50'] == 1]
+    df_corr = df_corr[df_corr['adj_joy_cnt'] > 0]
+    # df_corr = df_corr[df_corr['Sum_of_surprise_Episodes'] > 0]
+
+    est = smf.ols(formula="correct_learning_questions_percent ~  adj_joy_cnt * C(condition_stop)",
+                  data=df_corr).fit()
+    print(est.summary())
+
+    x = df_corr['adj_joy_cnt'].values
+    y = df_corr['correct_learning_questions_percent'].values
+    print(len(x))
+    plt.plot(x, y, 'bo')
+    plt.show()

@@ -5,10 +5,12 @@ from show_results import *
 df = load_data()
 
 # clean the data, get only relevant columns and information
-df_clean, relevant_keys, stat_keys = get_relevant_data(df)
+df_clean, relevant_keys, stat_keys, stat_names = get_relevant_data(df)
+
+# df_clean = add_affectiva(df_clean)
 
 # get some lists of faculty
-faculty_list, n_faculty = get_faculty(df_clean, relevant_keys)
+# faculty_list, n_faculty = get_faculty(df_clean, relevant_keys)
 
 # divide faculties according to campus / and other
 # !!! don't use
@@ -31,7 +33,7 @@ faculty_list, n_faculty = get_faculty(df_clean, relevant_keys)
 # show_faculty(df_clean, relevant_keys, stat_keys, faculty_list)
 
 # -- factor analysis
-analyze_factor_analysis(df, relevant_keys, stat_keys)
+# analyze_factor_analysis(df, relevant_keys, stat_keys)
 
 # analyze_faculty_preferences(df)
 
@@ -42,6 +44,7 @@ analyze_factor_analysis(df, relevant_keys, stat_keys)
 # also draw histograms
 # normality_testing(df_clean, relevant_keys, stat_keys)
 
+
 # -- tries to find clusters of people according to specific parameters
 # characterizing(df_clean, relevant_keys, stat_keys)
 
@@ -51,3 +54,18 @@ analyze_factor_analysis(df, relevant_keys, stat_keys)
 
 # bucketing(df_clean, relevant_keys, stat_keys)
 
+
+# NEW: conditions
+# analyze_conditions(df_clean, stat_keys, stat_names)
+
+# analyze_correlations(df_clean, stat_keys)
+
+# go_wild(df_clean)
+
+# assessment(df_clean)
+
+clusters(df_clean)
+
+# basic_stats(df_clean)
+
+# affectiva_groups(df_clean)
