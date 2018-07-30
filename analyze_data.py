@@ -453,8 +453,10 @@ def condition_plot(a, b, x, a_str, b_str, x_str, df_, x_name):
     xlocations = np.array(range(len(data))) + 0.5
     width = 0.5
     the_linewidth = 10
-    bar(xlocations, data, yerr=error, width=width, ecolor='black')
-
+    boxplot(x_data)
+    # bar(xlocations, data, yerr=error, width=width, ecolor='black')
+    for line in plt.gca().lines:
+        line.set_linewidth(5.)
 
     # if stop_p < 0.05:
     #     plot([xlocations[0] + 0.25, xlocations[1] + 0.25], [max(data)+max(error) * 1.2, max(data)+max(error) * 1.2],
@@ -696,9 +698,11 @@ def clusters(df_clean):
 
         draw_data_avg = np.zeros([3])
         draw_data_std = np.zeros([3])
+        x_data = []
         map_cluster_to_group = [0, 1, 2]
         for n in range(num_clusters):
             the_group = df_labeled[df_labeled['labels'] == n][the_measure].values
+            x_data.append(the_group)
             print('group %d: %2.2f \\pm %2.2f, N=%d' % (n, np.mean(the_group), np.std(the_group), len(the_group)))
             draw_data_avg[map_cluster_to_group[n]] = np.mean(the_group)
             draw_data_std[map_cluster_to_group[n]] = np.std(the_group) / np.sqrt(len(the_group))
@@ -733,7 +737,8 @@ def clusters(df_clean):
             width = 0.5
             the_linewidth = 10
             labels = ['Cluster 1', 'Cluster 2', 'Cluster 3']
-            bar(xlocations, data, yerr=error, width=width, ecolor='black')
+            # bar(xlocations, data, yerr=error, width=width, ecolor='black')
+
             # if the_measure == 'SAT':
             #     plot([xlocations[0] + 0.25, xlocations[0] + 0.25],
             #          [max(data) + max(error) * 1.2, max(data) + max(error) * 2.0],
@@ -782,14 +787,23 @@ def clusters(df_clean):
             #     ylabel('$\overline{CEI}$', usetex=True, fontsize=48)
 
             # xticks(xlocations + width / 2, labels)
-            xticks([], [])
+            # xticks([], [])
+            # plt.tick_params(axis='both', which='major', labelsize=48)
+            # xlim(0, xlocations[-1] + width * 2)
+            #
+            # axis([np.min(xlocations[0]), np.max(xlocations)+0.5, 0, max(data) + max(error) * 10.0])
+            # show()
+            font = {'family': 'normal',
+                    'weight': 'bold',
+                    'size': 76}
+            matplotlib.rc('font', **font)
+            boxplot(x_data)
+            for line in plt.gca().lines:
+                line.set_linewidth(5.)
             plt.tick_params(axis='both', which='major', labelsize=48)
-            xlim(0, xlocations[-1] + width * 2)
+            xticks([], [])
 
-            axis([np.min(xlocations[0]), np.max(xlocations)+0.5, 0, max(data) + max(error) * 10.0])
             show()
-
-
 
     y = df_clean[['curiosity_ques_embr_strt_TOTAL','SAT'] + curiosity_stats].dropna()
     y_label = kmeans.predict(y[curiosity_stats].values)

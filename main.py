@@ -7,6 +7,8 @@ df = load_data()
 # clean the data, get only relevant columns and information
 df_clean, relevant_keys, stat_keys, stat_names = get_relevant_data(df)
 
+df_clean = renormalize_entropies(df_clean, stat_keys)
+
 # df_clean = add_affectiva(df_clean)
 
 # get some lists of faculty

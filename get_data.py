@@ -70,7 +70,7 @@ def get_relevant_data(df):
                  'correct_learning_questions_number', 'correct_learning_questions_percent',
                  'curiosity_ques_embr_strt_TOTAL', 'BFI']
 
-    stat_names = ['T', 'T_0',
+    stat_names = ['T_0',
                   'N_{facts}', '\\overline{T}',
                   '\\overline{H}_m', '\\overline{H}_t',
                   'L', '\\overline{L}',
@@ -88,6 +88,14 @@ def get_relevant_data(df):
     # clean the data
     df_clean = df_clean[df_clean['curiosity_ques_embr_strt_TOTAL'] > 0.0]
     return df_clean, relevant_keys, stat_keys, stat_names
+
+
+def renormalize_entropies(df_clean, stat_keys):
+    for i_stat, x_str in enumerate(stat_keys):
+        if 'entropy' in x_str:
+            df_clean[x_str] = [np.min([0.99, v]) for v in df_clean[x_str].values]
+            df_clean[x_str] = -np.log10(1.0 - df_clean[x_str].values)/2.0
+    return df_clean
 
 
 def add_affectiva(df_clean):
