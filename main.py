@@ -7,7 +7,10 @@ df = load_data()
 # clean the data, get only relevant columns and information
 df_clean, relevant_keys, stat_keys, stat_names = get_relevant_data(df)
 
-df_clean = renormalize_entropies(df_clean, stat_keys)
+# df_clean = renormalize_entropies(df_clean, stat_keys)
+
+# re-save the data
+# df_clean.to_csv(data_path + 'df_clean_unnormalized_entropies.csv')
 
 # df_clean = add_affectiva(df_clean)
 
@@ -64,9 +67,9 @@ df_clean = renormalize_entropies(df_clean, stat_keys)
 
 # go_wild(df_clean)
 
-# assessment(df_clean)
+paper_assessment(df_clean)
 
-clusters(df_clean)
+# clusters(df_clean)
 
 # basic_stats(df_clean)
 

@@ -561,6 +561,8 @@ def analyze_conditions(df_clean, stat_keys, stat_names):
         moore_lm = ols(formula=formula, data=data).fit()
         table = sm.stats.anova_lm(moore_lm, typ=2)  # Type 2 ANOVA DataFrame
         print(table)
+        print(x_str, 'Effect size: ', '\eta^2=%2.3f, %2.3f' %(table.sum_sq.values[0] / table.sum_sq.values[-1],
+              table.sum_sq.values[1] / table.sum_sq.values[-1]))
         print('====== end ======')
 
         # # formula = '%s ~ C(%s) * C(%s) * C(%s)' % (x_str, a_str, b_str, c_str)
@@ -901,6 +903,224 @@ def assessment(df_clean):
     est = smf.ols(
         formula="grades ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
         data=data).fit()
+    print(est.summary())
+
+    print('===============================')
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'correct_learning_questions_percent', 'Multi_discipline_entropy',
+                     'condition_stop', 'condition_framing']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + Multi_discipline_entropy + condition_framing + condition_stop",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'correct_learning_questions_percent', 'Multi_discipline_entropy']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'Multi_discipline_entropy']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['SAT', 'correct_learning_questions_percent', 'Multi_discipline_entropy',
+                     'condition_stop', 'condition_framing']].dropna()
+    data = data[data['SAT'] > 500]
+    est = smf.ols(
+        formula="SAT ~  correct_learning_questions_percent + Multi_discipline_entropy + condition_framing + condition_stop",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['SAT', 'correct_learning_questions_percent', 'Multi_discipline_entropy']].dropna()
+    data = data[data['SAT'] > 500]
+    est = smf.ols(
+        formula="SAT ~  correct_learning_questions_percent + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+
+    data = df_clean[['SAT', 'Multi_discipline_entropy']].dropna()
+    data = data[data['SAT'] > 500]
+    est = smf.ols(
+        formula="SAT ~  Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    print('###########################################')
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'wavs_amount', 'Multi_discipline_entropy', 'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+
+    data = df_clean[['SAT', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    data = data[data['SAT'] > 500]
+    est = smf.ols(
+        formula="SAT ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['grades', 'wavs_amount', 'Multi_discipline_entropy', 'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="grades ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['BFI', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="BFI ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print(est.summary())
+
+    print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent',
+                     'condition_stop', 'condition_framing']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy + condition_framing + condition_stop",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['SAT', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent',
+                     'condition_stop', 'condition_framing']].dropna()
+    data = data[data['SAT'] > 500]
+    est = smf.ols(
+        formula="SAT ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy + condition_framing + condition_stop",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['grades', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent',
+                     'condition_stop', 'condition_framing']].dropna()
+    est = smf.ols(
+        formula="grades ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy + condition_framing + condition_stop",
+        data=data).fit()
+    print(est.summary())
+
+    data = df_clean[['BFI', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent',
+                     'condition_stop', 'condition_framing']].dropna()
+    est = smf.ols(
+        formula="BFI ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy + condition_framing + condition_stop",
+        data=data).fit()
+    print(est.summary())
+
+
+def paper_assessment(df_clean):
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'BFI']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  BFI", data=data).fit()
+    print(est.summary())
+
+    data = df_clean[df_clean['SAT'] > 0][['curiosity_ques_embr_strt_TOTAL', 'SAT']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  SAT", data=data).fit()
+    print(est.summary())
+
+    data = df_clean[df_clean['grades'] > 0][['curiosity_ques_embr_strt_TOTAL', 'grades']].dropna()
+    est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  grades", data=data).fit()
+    print(est.summary())
+
+    for m_ in ['t0', 'wavs_amount', 'normalized_total_listenning_time', 'Multi_discipline_entropy', 'transition_entropy', 'correct_learning_questions_percent']:
+        data = df_clean[['curiosity_ques_embr_strt_TOTAL', m_, 'condition_framing', 'condition_stop']].dropna()
+        est = smf.ols(formula="curiosity_ques_embr_strt_TOTAL ~  %s + condition_framing + condition_stop" % m_,
+                      data=data).fit()
+        print('%s F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (m_, est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue, est.rsquared / (1.0- est.rsquared)))
+        print(est.summary())
+
+    for m_ in ['t0', 'wavs_amount', 'normalized_total_listenning_time', 'Multi_discipline_entropy', 'transition_entropy', 'correct_learning_questions_percent']:
+        data = df_clean[['SAT', m_, 'condition_framing', 'condition_stop']].dropna()
+        est = smf.ols(formula="SAT ~  %s + condition_framing + condition_stop" % m_,
+                      data=data).fit()
+        print('%s F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        m_, est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue, est.rsquared / (1.0 - est.rsquared)))
+        print(est.summary())
+
+        data = df_clean[['Multi_discipline_entropy',
+                         'transition_entropy']].dropna()
+        est = smf.ols(
+            formula="transition_entropy ~  Multi_discipline_entropy",
+            data=data).fit()
+        print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+            est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+            est.rsquared / (1.0 - est.rsquared)))
+        print(est.summary())
+
+
+    data = df_clean[['curiosity_ques_embr_strt_TOTAL', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+        est.rsquared / (1.0 - est.rsquared)))
+    print(est.summary())
+
+    data = df_clean[['SAT', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    data = data[data['SAT'] > 500]
+    est = smf.ols(
+        formula="SAT ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+        est.rsquared / (1.0 - est.rsquared)))
+    print(est.summary())
+
+    data = df_clean[['BFI', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="BFI ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+        est.rsquared / (1.0 - est.rsquared)))
+    print(est.summary())
+
+    data = df_clean[['grades', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="grades ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+        est.rsquared / (1.0 - est.rsquared)))
+    print(est.summary())
+
+    data = df_clean[df_clean['condition_stop'] == 0][['curiosity_ques_embr_strt_TOTAL', 'wavs_amount', 'Multi_discipline_entropy',
+                     'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+        est.rsquared / (1.0 - est.rsquared)))
+    print(est.summary())
+
+    data = df_clean[df_clean['condition_stop'] == 1][
+        ['curiosity_ques_embr_strt_TOTAL', 'wavs_amount', 'Multi_discipline_entropy',
+         'correct_learning_questions_percent']].dropna()
+    est = smf.ols(
+        formula="curiosity_ques_embr_strt_TOTAL ~  correct_learning_questions_percent + wavs_amount + Multi_discipline_entropy",
+        data=data).fit()
+    print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+        est.rsquared / (1.0 - est.rsquared)))
+    print(est.summary())
+
+    data = df_clean[['SAT', 'curiosity_ques_embr_strt_TOTAL',
+                     'BFI']].dropna()
+    est = smf.ols(
+        formula="SAT ~  BFI + curiosity_ques_embr_strt_TOTAL",
+        data=data).fit()
+    print('F(%d, %d) = %2.1f, R^2 = %1.3f, p=%1.3f, f^2=%2.2f' % (
+        est.df_model, est.df_resid, est.fvalue, est.rsquared, est.f_pvalue,
+        est.rsquared / (1.0 - est.rsquared)))
     print(est.summary())
 
 
